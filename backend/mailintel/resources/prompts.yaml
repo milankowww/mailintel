@@ -1,0 +1,234 @@
+prompts:
+  summary:
+    description: Generate a strict JSON summary for one email.
+    system: |
+      You summarize email messages for a local triage tool and must answer in valid JSON only.
+    user_template: |
+      Return one valid JSON object only, with keys: summary_text, rationale, confidence.
+      Do not include markdown, code fences, comments, XML tags, or prose outside the JSON object.
+      Keep summary_text to at most 2 sentences and grounded only in the provided message.
+      Write the summary as a short mailbox-triage paraphrase in your own words.
+      Do not quote the email and do not copy sentences or long phrases from it.
+      Set confidence to a number between 0 and 1.
+      Mailbox owner identity/context (not message evidence; do not summarize this part):
+      {user_context}
+      Use this only to identify the mailbox owner and disambiguate names, aliases, usernames, and email addresses.
+      Do not infer actions, places, relationships, or facts from this context unless the supplied email/input also supports them.
+      Now is: {now}
+      Subject: {subject}
+      Sender: {sender_name} <{sender_address}>
+      Unread: {unread}
+      Has attachments: {has_attachments}
+      Interest matches:
+      {match_lines}
+      Summarize only this message evidence:
+      Message content:
+      {source_text}
+
+  answer_query:
+    description: Answer my question using supplied mail context.
+    system: |
+      Answer using the supplied email context. Return exactly one JSON object.
+    user_template: |
+      Answer my question using the supplied email context. Do not guess. Return exactly one JSON object:
+      {{"answer":string,"supporting_context_item_ids":string[],"maybe_relevant_context_item_ids":string[],"evidence_sufficiency":"strong|partial|weak|insufficient","retrieval_limitations":string[]}}
+
+      Rules:
+      - I am the mailbox owner. In "answer", address me as "you/your"; never use "I/me/my/we/our" for me.
+      - Keep the answer <= 2 sentences, helpful, and grounded only in the provided evidence.
+      - For broad/list questions, include every distinct evidence-backed item in "answer" as compact semicolon-separated items.
+      - Keep distinct items separate; do not merge different events, requests, obligations, bookings, people, organizations, dates, places, or topics.
+      - Cite only ids from Context headers like [id=message:123 ...].
+      - Take into account that marketing messages and spam may be misleading and/or less helpful than other content.
+      - If order/time is unclear, say so.
+      - If evidence is insufficient, say so and use no supporting ids.
+      - First-person text in emails/summaries is source wording; do not treat it as my action unless evidence clearly links it to me.
+
+      Output JSON only. No markdown, code fences, comments, XML tags, chain-of-thought, or prose outside the JSON object.
+
+      Now is: {now}
+
+      My identity/context (not evidence):
+      {user_context}
+
+      Question:
+      {query}
+
+      Context:
+      {context_blocks}
+
+  search_strategy:
+    description: Decide on the search strategy for a given mail question.
+    system: |
+      You are a bounded retrieval planner for a mailbox intelligence tool. Answer in JSON only.
+    user_template: |
+      Analyze the user question only to produce retrieval guidance. Do not answer the question.
+      Return strict JSON with these keys:
+      - query_type: one of specific_lookup, broad_summary, person_specific, date_bounded, recent_overview, narrow_fact, thematic
+      - keyword_queries: array of up to 3 keyword-oriented search strings
+      - entity_queries: array of up to 3 strings focused on names, organizations, projects, products, email addresses, domains, IDs, acronyms, quoted phrases, or spelling variants
+      - semantic_queries: array of up to 3 short semantic paraphrases for embedding search
+      The original user query will always be searched separately, so do not simply copy it unless it is also the best probe.
+      Use dates or date phrases in the probes when present, but do not invent dates.
+      Question: {query}
+      Now: {now}
+      Available summary index note:
+      {summaries_index}
+  search_query_rewrite:
+    description: Rewrite a mail question into a retrieval-oriented search query.
+    system: |
+      You rewrite user questions into short email search queries for lexical retrieval. Return only the query text.
+    user_template: |
+      Rewrite the user's mail question into a keyword-rich search query for retrieving relevant emails.
+      Return only the query text, with no explanation.
+      Prefer specific people, projects, deadlines, topics, action items, aliases, and related terminology.
+      Avoid generic filler words such as I, a, the, what, and similar low-signal terms.
+      Generate broader retrieval coverage by including multiple relevant term options and variants when helpful.
+      Include useful English and Slovak terms when they could help retrieval.
+      Now is {now}.
+      Question: {question}
+
+  interest_classification:
+    description: Classify one email against all user-defined interest profiles.
+    system: |
+      You classify email into user-defined interest profiles for a mailbox triage tool. Answer in JSON only.
+    user_template: |
+      Return strict JSON: {{"matches":[{{"id":number,"name":string,"score":number,"rationale":string}}]}}
+      Classify this email against the user's interest profiles.
+      Evaluate every profile independently; an email may match multiple profiles.
+      Include every profile that directly matches the email, not only the first or strongest match.
+      Use each profile description as the main meaning of the profile.
+      Use keyword hints only as supporting evidence after the description clearly matches.
+      Keyword hints cannot turn a description mismatch into a match.
+      Never include a profile when the email is not about the profile description, even if a keyword hint seems related.
+      Do not match solely on generic words like email, update, event, security, cyber, kyber, report, investigation, alert, or message.
+      A security alert, SIEM investigation, compromised account, unauthorized access, or incident report is not a conference/event/speaking match unless it is also an invitation, agenda, talk, panel, conference, webinar, symposium, or speaker request.
+      A product ad for presentation equipment is not a conference/event/speaking match unless it is about a real event, talk, panel, agenda, or speaking invitation.
+      Only include a profile when the email is genuinely about that interest.
+      If your rationale would say the email does not align with, does not mention, or is only broadly related to a profile, omit that profile.
+      Scores must be between 0 and 1. Use at least 0.75 for strong direct matches, 0.45-0.74 for likely matches, and omit weak/accidental matches.
+      Now is {now}.
+      Subject: {subject}
+      Sender: {sender_name} <{sender_address}>
+      Profiles:
+
+      {profiles_block}
+      Email content:
+      {source_text}
+
+  message_analysis:
+    description: Summarize one email and classify it against user-defined interest profiles in one call.
+    system: |
+      You analyze email messages for a local triage tool and must answer in valid JSON only.
+    user_template: |
+      Return one valid JSON object only, with keys: summary_text, rationale, confidence, matches.
+      matches must be an array of objects: {{"id":number,"name":string,"score":number,"rationale":string}}.
+      Do not include markdown, code fences, comments, XML tags, or prose outside the JSON object.
+      Keep summary_text to at most 2 sentences and grounded only in the provided message.
+      Write the summary as a short mailbox-triage paraphrase in your own words.
+      Do not quote the email and do not copy sentences or long phrases from it.
+      Set confidence to a number between 0 and 1.
+      Evaluate every profile independently; an email may match multiple profiles.
+      Include every profile that directly matches the email, not only the first or strongest match.
+      Use each profile description as the main meaning of the profile.
+      Use keyword hints only as supporting evidence after the description clearly matches.
+      Keyword hints cannot turn a description mismatch into a match.
+      Never include a profile when the email is not about the profile description, even if a keyword hint seems related.
+      Omit weak, accidental, generic, or negative matches.
+      If no profile directly matches, return an empty matches array.
+      Mailbox owner identity/context (not message evidence; do not summarize this part):
+      {user_context}
+      Use this only to identify the mailbox owner and disambiguate names, aliases, usernames, and email addresses.
+      Do not infer actions, places, relationships, or facts from this context unless the supplied email/input also supports them.
+      Now is {now}.
+      Subject: {subject}
+      Sender: {sender_name} <{sender_address}>
+      Unread: {unread}
+      Has attachments: {has_attachments}
+      Profiles:
+
+      {profiles_block}
+      Summarize and classify only this message evidence:
+      Message content:
+      {source_text}
+
+  interval_summary:
+    description: Summarize mailbox intervals into structured evidence-backed digest entries.
+    system: |
+      Summarize mailbox activity using only supplied inputs.
+      Return exactly one valid JSON object and no other text.
+
+    user_template: |
+      Write a {summary_type} mailbox digest for {interval_start_date}, covering {period_days} day(s).
+
+      A digest is a small list of broad clusters of related emails, not a list of individual emails.
+      Cluster inputs first; output only final clusters. Prefer fewer, broader clusters.
+
+      Rules:
+      - One entry per cluster, not per email.
+      - Merge related messages into clusters by broad topic (such as for example Banking Activity & Finances, Workshops & Events & Travel, Personal Tasks & Requests, Security updates, Social Networks, Sales and promotions, News), thread, sender/source, event, incident, project, booking, deadline, transaction, service, recurring notification type, or shared purpose.
+      - For each cluster, make an informative summary and list the contributing message_ids. Only include messages that logically belong in the cluster.
+      - Prioritize deadlines, replies, meetings, invitations, bookings, cancellations, travel changes, payments, service/access changes, security issues, incident reports, personal requests, legal/admin matters, and reputation-sensitive items.
+      - Keep the cluster summary informative, <= 2 sentences, helpful with reasonable detail, and grounded only in its contributing summarised messages.
+      - If the messages mention particular organization, person, event, project, booking, deadline, transaction, service and similar, include those in the summary so that the information is not completely lost.
+      - Every input that is summarized must appear in exactly one cluster.
+      - Preserve IDs exactly. Do not invent IDs.
+
+      Bad: one entry per newsletter, notification, or marketing email.
+      Good: one grouped entry for routine updates/newsletters when no separate action is evident.
+
+      Return exactly:
+      {{"entries":[{{"summary":"short descriptive summary of the emails in the cluster","message_ids":[123]}}]}}
+
+      Mailbox owner identity/context (not message evidence; do not summarize this part):
+      {user_context}
+      Use this only to identify the mailbox owner and disambiguate names, aliases, usernames, and email addresses.
+      Do not infer actions, places, relationships, or facts from this context unless the supplied email/input also supports them.
+
+      Mailbox: {mailbox_name}
+      Summarize only these inputs:
+      Inputs:
+      {source_text}
+
+  topic_labeling:
+    description: Create a human-readable topic label for related emails.
+    system: |
+      You label clusters of email messages for a local mailbox overview. Answer in JSON only.
+    user_template: |
+      Return strict JSON with keys: name, description, key_terms, key_entities, summary, why_it_matters.
+      Create a concise human topic label for these related emails, ideally five words or less.
+      The name must be a short noun phrase that sounds intentionally written by a person, not a stitched keyword list.
+      Prefer concrete real-world topics, tasks, incidents, projects, decisions, or events over generic newsletter wording.
+      Do not use raw HTML/CSS/XML terms, URLs, boilerplate, mailbox filler, or repeated sender branding.
+      If the emails are about an action or situation, name that action or situation directly.
+      Now is {now}.
+      Messages:
+
+      {examples}
+
+  search_rerank:
+    description: Score retrieval hits by relevance to a mail question.
+    system: |
+      You select email retrieval results. Answer in JSON only.
+    user_template: |
+      Score useful search hits by how helpful they are for answering the exact user question.
+      Each relevance_score is an independent 1 to 5 usefulness score, not a ranking position.
+      Return only useful hits. Do not return any object for an irrelevant hit.
+      relevance_score must be 1, 2, 3, 4, or 5. Never return 0.
+      Use this scale:
+      - 1: very weak or borderline evidence, possibly spam/noisy
+      - 2: weak evidence that may contribute something
+      - 3: medium evidence that answers part of the question or corroborates
+      - 4: strong evidence that provides substantial answer value
+      - 5: perfect evidence that directly answers the question
+      Leave out hits that are unrelated, generic background, keyword-only matches, or only weakly connected.
+      Promotions, ads, newsletters, social notifications, offers, invitations, reminders, and third-party text are not proof the mailbox owner acted.
+      Prefer direct emails only when they explicitly answer the relation; otherwise summaries may be better.
+      Return strict compact JSON only: {{"relevance_scores":[{{"index":number,"relevance_score":number}}]}} using only the provided index numbers.
+      Do not include classifications, reasons, explanations, markdown, or any other keys.
+      Now is {now}.
+      User identity/context (not evidence):
+      {user_context}
+      Question: {query}
+      Hits:
+      {hits_payload}

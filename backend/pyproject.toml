@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mailintel"
+version = "0.1.0"
+description = "Secure local mail intelligence platform with read-only connectors and restricted LLM tooling."
+readme = {text = "MailIntel backend package.", content-type = "text/plain"}
+requires-python = ">=3.11"
+dependencies = [
+  "cryptography>=42",
+  "fastapi>=0.111",
+  "httpx>=0.27",
+  "psycopg[binary]>=3.2",
+  "PyYAML>=6.0",
+  "SQLAlchemy>=2.0",
+  "alembic>=1.13",
+  "uvicorn>=0.30",
+  "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+]
+
+[project.scripts]
+mailintel = "mailintel.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["../tests/backend"]
+pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["mailintel*"]
+
+[tool.setuptools.package-data]
+mailintel = ["*.yaml"]
+"mailintel.resources" = ["*.yaml"]
+"mailintel.web" = ["**/*"]
+
+"mailintel.persistence.migrations.versions" = ["*.sql"]

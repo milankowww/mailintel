@@ -1,0 +1,71 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local databases and runtime state
+.mailintel/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+docker-data/
+
+# Environment and local secrets
+.env
+.env.*
+
+# Frontend/package manager leftovers
+node_modules/
+backend/mailintel/web/assets/
+backend/mailintel/web/build/
+
+# Distribution bundles
+dist/
+
+# Editors
+.idea/
+.vscode/
+.*.sw?
+
+# Local files
+deploy/compose/docker-compose.local.yml
+*.local
+
+# Reproducible caches and local tooling
+.cache/
+*.local/
+
+# Portable credentials, backups, and database exports
+!.env.example
+backups/
+*.backup
+*.dump
+*.sql.gz
+*.tar.gz
+*.zip
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+token*.json
+
+# Build and test output
+build/
+coverage/
+*.tsbuildinfo

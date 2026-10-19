@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile
+    environment:
+      MAILINTEL_PROFILE: docker-local
+      MAILINTEL_DATABASE_URL: postgresql://mailintel:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/mailintel
+      MAILINTEL_HOST: 0.0.0.0
+      MAILINTEL_PORT: 8000
+      MAILINTEL_CONFIG_DIR: /var/lib/mailintel/secrets
+      MAILINTEL_LLM_TIMEOUT_SECONDS: ${MAILINTEL_LLM_TIMEOUT_SECONDS:-1800}
+      MAILINTEL_CLUSTER_WORKER_COUNT: ${MAILINTEL_CLUSTER_WORKER_COUNT:-4}
+      MAILINTEL_SMART_SEARCH_STATEMENT_TIMEOUT_MS: ${MAILINTEL_SMART_SEARCH_STATEMENT_TIMEOUT_MS:-60000}
+      MAILINTEL_SMART_SEARCH_OWNER_TIMEZONE: ${MAILINTEL_SMART_SEARCH_OWNER_TIMEZONE:-UTC}
+      MAILINTEL_API_TOKEN: ${MAILINTEL_API_TOKEN:-}
+      # For Ollama running on the host, use http://host.docker.internal:11434 in the UI.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:${MAILINTEL_PORT:-8000}:8000"
+    volumes:
+      - mailintel_secrets:/var/lib/mailintel/secrets
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: mailintel
+      POSTGRES_USER: mailintel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailintel -d mailintel"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - ./docker-data/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  mailintel_secrets:

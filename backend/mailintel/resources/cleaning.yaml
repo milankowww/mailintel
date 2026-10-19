@@ -1,0 +1,23 @@
+drop_line_patterns:
+  - name: external_warning_nbu
+    description: Remove the Slovak external-sender warning banner.
+    pattern: 'tento\s+e-?mail\s+nie\s+je\s+z\s+n[aá]rodn[eé]ho\s+bezpe[cč]nostn[eé]ho\s+[uú]radu'
+  - name: tracking_and_subscription_footer
+    description: Remove common unsubscribe, tracking, and view-in-browser lines.
+    pattern: '\b(?:unsubscribe|one-click|view in browser|email nezobrazuje|klikni na|tracking|preferences|manage subscription)\b'
+token_rules:
+  - name: html_css_template_noise
+    description: Remove short HTML and CSS boilerplate lines left after stripping tags.
+    tokens:
+      - doctype
+      - xmlns
+      - urn
+      - schemas-microsoft-com
+      - vml
+      - office
+      - style
+      - font-family
+      - color
+      - padding
+      - margin
+    max_words: 8
