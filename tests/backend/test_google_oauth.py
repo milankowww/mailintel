@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 

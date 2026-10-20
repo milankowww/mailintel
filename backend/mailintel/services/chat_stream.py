@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Assemble provider chat streams into the response shapes used by LLMService."""
 from __future__ import annotations
 

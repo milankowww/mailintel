@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 from __future__ import annotations
 
 from mailintel.persistence.orm import SPECIAL_DDL, baseline_statements, metadata

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Preset slots and separate deterministic worker lanes consume SQL work."""
 from __future__ import annotations
 

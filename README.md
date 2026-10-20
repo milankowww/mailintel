@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # MailIntel
 
 MailIntel is a self-hosted application for secure AI-assisted email analysis, prioritization, and search, built around read-only mailbox access and controlled processing.
@@ -46,6 +51,8 @@ The first build downloads dependencies. The database persists under `docker-data
 
 MailIntel runs one application instance with its background workers. It is designed for a private installation with a shared bearer token granting access to the whole application.
 
-## License
+## Author and license
+
+MailIntel was created by Milan Pikula.
 
 MailIntel is licensed under the [European Union Public Licence v. 1.2](LICENSE). The license text is reproduced unchanged from the [European Commission’s official download](https://interoperable-europe.ec.europa.eu/sites/default/files/inline-files/EUPL%20v1_2%20EN%281%29.txt).

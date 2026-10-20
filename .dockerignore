@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 # Build context contains only inputs needed by deploy/docker/Dockerfile.
 **
 !backend/

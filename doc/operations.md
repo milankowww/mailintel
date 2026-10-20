@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # Operations
 
 ## Authentication and access

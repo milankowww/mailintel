@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """One-layer topic clustering: a topic is the cluster of its member emails."""
 from __future__ import annotations
 

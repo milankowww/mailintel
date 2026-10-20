@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 from __future__ import annotations
 
 from mailintel.connectors.ews import EWSConnector, parse_find_item_response, parse_get_item_response

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Temporary loopback bridge for Google consent on a private MailIntel host.
 
 Run on the computer where your browser runs, with Python 3.10 or newer:

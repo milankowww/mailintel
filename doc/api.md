@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # HTTP API
 
 Use the API to integrate your own tools with a private MailIntel installation. The running app exposes interactive documentation at `/docs` and the generated OpenAPI schema at `/openapi.json`; these describe the exact request and response fields for the running version.

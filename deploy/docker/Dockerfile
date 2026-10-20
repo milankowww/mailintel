@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 FROM node:24-slim AS frontend-builder
 
 WORKDIR /src

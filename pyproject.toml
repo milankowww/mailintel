@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 [tool.pytest.ini_options]
 testpaths = ["tests/backend"]
 pythonpath = ["backend"]

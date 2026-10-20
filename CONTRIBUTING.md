@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # Contributing
 
 Follow [Installation](doc/installation.md#local-python) to install the backend and build the frontend. Keep changes focused, describe the user-visible behavior, and add tests for meaningful changes to processing, persistence, or API behavior. Use synthetic mailbox contents and placeholder credentials in fixtures.
@@ -31,3 +36,11 @@ From `backend/`, with `MAILINTEL_DATABASE_URL` set, run `alembic -c alembic.ini 
 Commit intended source changes, then run `scripts/packaging/pack-source.sh`. It uses `git archive HEAD` to include exactly the committed source tree. Output goes to ignored `dist/`.
 
 Keep private Compose overrides in `deploy/compose/docker-compose.local.yml` and private helper directories with a `.local` suffix. Keep backups under `backups/`. Review staged files with `git diff --cached` before committing. A source archive must be built before it can serve the frontend; it intentionally excludes generated assets.
+
+## Copyright and license notices
+
+Add `SPDX-FileCopyrightText` and `SPDX-License-Identifier` notices (using `EUPL-1.2`) to new project files using the file format’s comment syntax. Keep executable shebangs on the first line. Preserve existing third-party notices when incorporating code.
+
+Use `REUSE.toml` annotations for files that require external notices, such as JSON and frozen migration SQL. The complete license text is in `LICENSES/EUPL-1.2.txt`, with an identical copy in the root `LICENSE` for repository discovery. Keep both copies unchanged and in sync.
+
+Install the REUSE tool with `python -m pip install reuse` in your development environment and run `reuse lint` from the repository root to check notice coverage.

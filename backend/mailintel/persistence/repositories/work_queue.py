@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """SQL work ownership. Every queue transition and its event share a transaction."""
 from contextlib import contextmanager
 from psycopg.types.json import Jsonb

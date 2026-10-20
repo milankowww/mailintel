@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Interval summaries: one provider call per durable continuation."""
 from __future__ import annotations
 

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # Gmail over IMAP with Google OAuth
 
 Choose **Gmail / Google OAuth** in Mail settings. The adjacent info button contains the setup tutorial and installation-wide OAuth client settings. Save the account, connect Google, choose mailboxes, then sync.

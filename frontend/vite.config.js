@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { compile } from "@vue/compiler-dom";

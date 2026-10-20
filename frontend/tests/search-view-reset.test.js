@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

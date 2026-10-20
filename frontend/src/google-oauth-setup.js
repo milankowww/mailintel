@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 export const GoogleOAuthSetup = {
   props: ['fetchJson'],
   data() {

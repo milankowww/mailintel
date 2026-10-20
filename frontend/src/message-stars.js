@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 // Shared across every occurrence of an email, including saved search evidence.
 export function createMessageStars(fetchJson, reactive = (value) => value) {
   const state = reactive({ values: {}, pending: {}, errors: {}, ready: false, revision: 0 });

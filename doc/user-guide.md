@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # User guide
 
 MailIntel provides summaries, priorities, topics, and answers for you to review alongside their source messages. Mailbox access is read-only; you decide what action to take in your email client.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 export function matchingSources(search) {
   const cited = new Set((search.result?.sources || [])
     .filter((source) => source.search_relevance === "supporting").map((source) => Number(source.id)));

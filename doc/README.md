@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # Documentation
 
 Start with the [quick start](../README.md#quick-start), then follow these guides for your installation.

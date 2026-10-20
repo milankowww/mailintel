@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Google authorization and token refresh; IMAP remains the mail transport."""
 from __future__ import annotations
 

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Milan Pikula
+SPDX-License-Identifier: EUPL-1.2
+-->
+
 # Architecture
 
 MailIntel runs a FastAPI application, a Vue/Vuetify frontend, and background processing threads against PostgreSQL with pgvector. One application process owns the worker runtime. The model service is a separate dependency selected by the operator.

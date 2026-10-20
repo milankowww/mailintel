@@ -1,4 +1,7 @@
 #!/usr/bin/env sh
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 # Package committed source only; never include private working-tree files.
 set -eu
 name=${1:-mailintel-source.tar.gz}

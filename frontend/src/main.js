@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Milan Pikula
+// SPDX-License-Identifier: EUPL-1.2
+
 import { GoogleOAuthSetup } from "./google-oauth-setup.js";
 import { createMessageStars } from "./message-stars.js";
 import { createApp, reactive } from "vue";

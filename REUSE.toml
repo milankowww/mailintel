@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
+version = 1
+
+# JSON has no comments; keep the published migration SQL byte-for-byte stable.
+[[annotations]]
+path = [
+    "frontend/package.json",
+    "frontend/package-lock.json",
+    "backend/mailintel/persistence/migrations/versions/0001_initial_schema.sql",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Milan Pikula"
+SPDX-License-Identifier = "EUPL-1.2"

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 from __future__ import annotations
 
 from mailintel.account_secrets import account_for_connector, account_for_response

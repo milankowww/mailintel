@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
 """Incremental topic assignment, one provider call per label task."""
 from __future__ import annotations
 
