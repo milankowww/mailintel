@@ -3,6 +3,7 @@
 
 # Build context contains only inputs needed by deploy/docker/Dockerfile.
 **
+!LICENSE
 !backend/
 !backend/**
 !frontend/
@@ -32,3 +33,5 @@ frontend/tests/
 **/*.key
 **/credentials*.json
 **/token*.json
+**/build/
+**/dist/

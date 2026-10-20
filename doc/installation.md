@@ -47,6 +47,8 @@ mailintel serve --reload
 
 For the Python app, export settings in your shell. Local secrets default to `~/.config/mailintel`. Open http://127.0.0.1:8000. The backend serves the frontend and its bundled assets.
 
+For the pinned Python 3.12 release environment and package verification, follow [Building and releasing MailIntel](releases.md).
+
 ## Development with Docker
 
 Build the frontend with `npm ci && npm run build` from `frontend/`, then run:

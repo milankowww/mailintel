@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
+setuptools>=77
+wheel
+build

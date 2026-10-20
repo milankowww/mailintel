@@ -41,6 +41,18 @@ Keep private Compose overrides in `deploy/compose/docker-compose.local.yml` and 
 
 Add `SPDX-FileCopyrightText` and `SPDX-License-Identifier` notices (using `EUPL-1.2`) to new project files using the file format’s comment syntax. Keep executable shebangs on the first line. Preserve existing third-party notices when incorporating code.
 
-Use `REUSE.toml` annotations for files that require external notices, such as JSON and frozen migration SQL. The complete license text is in `LICENSES/EUPL-1.2.txt`, with an identical copy in the root `LICENSE` for repository discovery. Keep both copies unchanged and in sync.
+Use `REUSE.toml` annotations for files that require external notices, such as JSON and frozen migration SQL. The complete license text is in `LICENSES/EUPL-1.2.txt`, with identical copies in the root `LICENSE` for repository discovery and `backend/LICENSE` for Python packaging. Keep both copies unchanged and in sync.
 
 Install the REUSE tool with `python -m pip install reuse` in your development environment and run `reuse lint` from the repository root to check notice coverage.
+
+## Contribution credit
+
+Every accepted contribution matters, including a typo fix, a focused test, a useful bug report, or help reproducing an issue. Preserve the contributor’s Git author identity when applying or merging changes. For jointly authored or squashed work, retain the original authors and use agreed `Co-authored-by` commit trailers where appropriate.
+
+Use release acknowledgements to credit reports, testing, design discussion, translations, and other help that Git history does not capture. Ask for the contributor’s preferred public name or handle and consent before listing them. Security reporter credit follows the private disclosure process in [SECURITY.md](SECURITY.md).
+
+Source-file copyright notices describe copyright holders. Add an appropriate notice when contributing copyrightable work and preserve existing notices; use commit and release attribution to credit minor edits. A contributor’s presence in an acknowledgement list does not imply ownership of every file. See the [REUSE guidance](https://reuse.software/faq/#what-is-a-copyright-holder-and-what-is-an-author) for this distinction.
+
+## Release checks
+
+Use the locked Python 3.12 environment and artifact checks in [Releases](doc/releases.md) when preparing a release. CI uses GitHub Actions; issue and pull-request templates are under `.github/`. Report security issues privately to [milan.pikula@ipsec.info](mailto:milan.pikula@ipsec.info).

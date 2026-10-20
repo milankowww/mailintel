@@ -1,0 +1,134 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 6 * * 1'
+permissions:
+  contents: read
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: '1'
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: mailintel_test
+          POSTGRES_USER: mailintel_test
+          POSTGRES_PASSWORD: isolated-ci-password
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      MAILINTEL_TEST_DATABASE_URL: postgresql://mailintel_test:isolated-ci-password@127.0.0.1:5432/mailintel_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: |
+          pip install --require-hashes -r backend/requirements-dev.lock
+          pip install --no-deps --no-build-isolation -e backend
+          pip check
+          python scripts/ci/wait_database.py
+          python -m pytest
+          reuse lint
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm test && npm run build
+        working-directory: frontend
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend
+          path: backend/mailintel/web/build/
+          retention-days: 7
+          if-no-files-found: error
+  packages:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend
+          path: backend/mailintel/web/build/
+      - run: |
+          pip install --require-hashes -r backend/requirements-build.lock
+          python -m build --no-isolation backend --outdir dist
+          python scripts/ci/check_release.py
+          scripts/packaging/pack-source.sh
+          (cd dist && sha256sum *.whl *.tar.gz > SHA256SUMS)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: packages
+          path: dist/
+          retention-days: 30
+          if-no-files-found: error
+  container:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - run: |
+          docker build -f deploy/docker/Dockerfile -t mailintel:ci .
+          docker network create mailintel-ci
+          docker run -d --name db --network mailintel-ci -e POSTGRES_USER=mailintel_test -e POSTGRES_DB=mailintel_test -e POSTGRES_PASSWORD=isolated-ci-password pgvector/pgvector:pg16
+          docker run --rm -i --network mailintel-ci -e MAILINTEL_TEST_DATABASE_URL=postgresql://mailintel_test:isolated-ci-password@db:5432/mailintel_test --entrypoint python mailintel:ci < scripts/ci/wait_database.py
+          docker run -d --name app --network mailintel-ci -e MAILINTEL_DATABASE_URL=postgresql://mailintel_test:isolated-ci-password@db:5432/mailintel_test -e MAILINTEL_LLM_PAUSED=1 mailintel:ci
+          docker exec -w / -i app python < scripts/ci/smoke_container.py
+      - if: always()
+        run: |
+          docker logs app || true
+          docker rm -fv app db || true
+          docker network rm mailintel-ci || true
+  dependency-audit:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - run: |
+          pip install --require-hashes -r backend/requirements-dev.lock
+          pip-audit -r backend/requirements.lock --no-deps --disable-pip
+      - if: always()
+        run: npm ci && npm audit --audit-level=high
+        working-directory: frontend

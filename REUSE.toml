@@ -13,3 +13,10 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Milan Pikula"
 SPDX-License-Identifier = "EUPL-1.2"
+
+# Generated dependency locks carry project annotations outside their contents.
+[[annotations]]
+path = ["backend/requirements.lock", "backend/requirements-build.lock", "backend/requirements-dev.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Milan Pikula"
+SPDX-License-Identifier = "EUPL-1.2"

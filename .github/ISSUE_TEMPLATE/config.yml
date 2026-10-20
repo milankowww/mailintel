@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/milankowww/mailintel/blob/main/SECURITY.md
+    about: Contact milan.pikula@ipsec.info using the security reporting guidance.

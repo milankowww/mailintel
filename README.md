@@ -22,11 +22,15 @@ You review the results and their source messages, then decide what action to tak
 
 The central principle is to **keep AI mistakes confined to analysis**. A mistaken summary or a manipulated response has no authority to send, delete, or modify your mail. The model provides interpretations; control over your correspondence stays with you.
 
+The public project lives at [github.com/milankowww/mailintel](https://github.com/milankowww/mailintel).
+
 ## Quick start
 
-You need Docker with Compose, access to an IMAP or Exchange EWS mailbox, and a reachable model service providing text generation and embeddings. Run these commands from the repository root:
+You need Docker with Compose, access to an IMAP or Exchange EWS mailbox, and a reachable model service providing text generation and embeddings. Get the source and start the application:
 
 ```sh
+git clone https://github.com/milankowww/mailintel.git
+cd mailintel
 cp .env.example .env
 # Edit .env and replace POSTGRES_PASSWORD with a unique password.
 docker compose --project-directory . -f deploy/compose/docker-compose.yml up -d --build
@@ -48,8 +52,14 @@ The first build downloads dependencies. The database persists under `docker-data
 - [Operations](doc/operations.md): settings, backups, authentication, and troubleshooting.
 - [Documentation index](doc/README.md): API and architecture references.
 - [Contributing](CONTRIBUTING.md): tests, database development, and source packages.
+- [Support](SUPPORT.md) and [security reporting](SECURITY.md): where to ask for help.
+- [Releases](doc/releases.md): building, validating, and upgrading releases.
 
 MailIntel runs one application instance with its background workers. It is designed for a private installation with a shared bearer token granting access to the whole application.
+
+## Contributors
+
+MailIntel welcomes code, documentation, testing, and reproducible bug reports, including small improvements. Git history records accepted code and documentation contributions; release acknowledgements also recognize other help with contributors’ consent. See the [contribution credit policy](CONTRIBUTING.md#contribution-credit).
 
 ## Author and license
 

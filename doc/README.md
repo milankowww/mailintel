@@ -15,4 +15,7 @@ Start with the [quick start](../README.md#quick-start), then follow these guides
 | [Operations](operations.md) | Configure, back up, recover, and troubleshoot |
 | [API](api.md) | Authenticate and integrate with the HTTP API |
 | [Architecture](architecture.md) | Understand data storage and background processing |
+| [Releases](releases.md) | Build, validate, upgrade, and maintain dependencies |
+| [Support](../SUPPORT.md) | Report problems and find help |
+| [Security](../SECURITY.md) | Report vulnerabilities privately |
 | [Contributing](../CONTRIBUTING.md) | Build, test, and change the application |

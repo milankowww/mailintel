@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Milan Pikula
+# SPDX-License-Identifier: EUPL-1.2
+
+-r requirements.lock
+-r requirements-build.lock
+pytest>=7.4
+reuse
+pip-audit

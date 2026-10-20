@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@mdi/font": "7.4.47",
-    "vue": "3.5.16",
+    "vue": "3.5.44",
     "vue-router": "4.5.1",
     "vuetify": "3.8.8"
   },
@@ -18,5 +19,15 @@
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/compiler-dom": "^3.5.16",
     "vite": "^8.0.16"
-  }
+  },
+  "license": "EUPL-1.2",
+  "author": "Milan Pikula",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/milankowww/mailintel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/milankowww/mailintel/issues"
+  },
+  "homepage": "https://github.com/milankowww/mailintel#readme"
 }

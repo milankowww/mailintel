@@ -2,12 +2,15 @@
 # SPDX-License-Identifier: EUPL-1.2
 
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mailintel"
 version = "0.1.0"
+license = "EUPL-1.2"
+license-files = ["LICENSE"]
+authors = [{name = "Milan Pikula"}]
 description = "Secure local mail intelligence platform with read-only connectors and restricted LLM tooling."
 readme = {text = "MailIntel backend package.", content-type = "text/plain"}
 requires-python = ">=3.11"
@@ -22,6 +25,12 @@ dependencies = [
   "uvicorn>=0.30",
   "tzdata>=2024.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/milankowww/mailintel"
+Documentation = "https://github.com/milankowww/mailintel/blob/main/doc/README.md"
+Issues = "https://github.com/milankowww/mailintel/issues"
+Security = "https://github.com/milankowww/mailintel/blob/main/SECURITY.md"
 
 [project.optional-dependencies]
 dev = [
