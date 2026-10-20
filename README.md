@@ -24,6 +24,10 @@ The central principle is to **keep AI mistakes confined to analysis**. A mistake
 
 The public project lives at [github.com/milankowww/mailintel](https://github.com/milankowww/mailintel).
 
+![MailIntel Priority Triage showing ranked messages, summaries, and reasons for their importance](doc/screenshots/01-priority-triage.png)
+
+*Priority Triage with illustrative correspondence. [Browse all screenshots](doc/screenshots/README.md) or follow the [illustrated user guide](doc/user-guide.md).*
+
 ## Quick start
 
 You need Docker with Compose, access to an IMAP or Exchange EWS mailbox, and a reachable model service providing text generation and embeddings. Get the source and start the application:
