@@ -20,3 +20,10 @@ path = ["backend/requirements.lock", "backend/requirements-build.lock", "backend
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Milan Pikula"
 SPDX-License-Identifier = "EUPL-1.2"
+
+# Screenshots use external notices to preserve the original image files.
+[[annotations]]
+path = ["doc/screenshots/*.png"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Milan Pikula"
+SPDX-License-Identifier = "EUPL-1.2"
