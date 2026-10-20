@@ -1,8 +1,21 @@
 # MailIntel
 
-MailIntel helps you find important messages, understand recurring topics, and ask questions about your email. It combines read-only mailbox ingestion with AI summaries, priority triage, interest profiles, and search with message sources.
+MailIntel is a self-hosted application for secure AI-assisted email analysis, prioritization, and search, built around read-only mailbox access and controlled processing.
 
-Your mail stays in your own PostgreSQL database. You choose the model provider: a local service for private processing, or a remote provider that receives the content needed for analysis. Models receive analysis inputs through a constrained interface; mailbox credentials stay with the connectors. AI answers can be wrong; check their source messages before acting.
+Many people use agentic AI to process their e-mail. That is very risky:
+
+- Emails contain untrusted text. An attacker can write a message that tries to persuade an AI agent to follow instructions hidden inside it.
+- An agent with mailbox permissions can send messages, delete correspondence, or change settings following a mistaken interpretation.
+- Access to tools, credentials, and external services can turn a misleading email into a route for leaking sensitive information.
+- Processing mail through a cloud model sends its contents to another organization.
+
+MailIntel limits these risks through its architecture. Its connectors read email while preserving the mailbox. Models receive content for specific analysis tasks, while mailbox credentials stay with the application’s connectors. Their outputs become summaries, classifications, and answers stored in the application database.
+
+You choose the model provider. You can use cloud-based frontier models, accepting that the email content submitted for processing is shared with their provider. Or you can use a small local model of your choice that fits in just a few gigabytes of memory, keeping inference within your own infrastructure.
+
+You review the results and their source messages, then decide what action to take.
+
+The central principle is to **keep AI mistakes confined to analysis**. A mistaken summary or a manipulated response has no authority to send, delete, or modify your mail. The model provides interpretations; control over your correspondence stays with you.
 
 ## Quick start
 

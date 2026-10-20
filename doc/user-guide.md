@@ -1,5 +1,7 @@
 # User guide
 
+MailIntel provides summaries, priorities, topics, and answers for you to review alongside their source messages. Mailbox access is read-only; you decide what action to take in your email client.
+
 ## Connect and synchronize mail
 
 In Mail Settings, create an account with its server address, authentication method, and credentials. IMAP supports password credentials and Gmail OAuth. Exchange uses EWS; your server must support the authentication method selected in the account settings. MailIntel reads messages while preserving mailbox flags.

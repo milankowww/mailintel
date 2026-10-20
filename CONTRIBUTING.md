@@ -2,6 +2,8 @@
 
 Follow [Installation](doc/installation.md#local-python) to install the backend and build the frontend. Keep changes focused, describe the user-visible behavior, and add tests for meaningful changes to processing, persistence, or API behavior. Use synthetic mailbox contents and placeholder credentials in fixtures.
 
+Preserve the read-only connector boundary when adding features. Keep mailbox credentials with connectors and model operations scoped to analysis and retrieval, with results stored as application data for users to review.
+
 ## Run checks
 
 From the repository root with the Python environment activated:

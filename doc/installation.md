@@ -15,6 +15,8 @@ docker compose --project-directory . -f deploy/compose/docker-compose.yml down
 
 ## Connect a model service
 
+Choose between cloud-based frontier models and local inference. Cloud providers receive the email content submitted for processing. A small local model can fit in just a few gigabytes of memory; actual requirements depend on the model, quantization, context size, and concurrency. Choose a model that supports MailIntel’s analysis tasks and fits your available resources.
+
 MailIntel supports Ollama and OpenAI-compatible endpoints. Install or run your chosen provider separately and load a text-generation model and an embedding model. In LLM Settings, enter its endpoint, authentication, model names, context sizes, output budget, and supported task capabilities. Use the connectivity check before enabling processing. The text model must support the structured output expected by the analysis and search prompts.
 
 For a provider on the Docker host, use `http://host.docker.internal:11434` for Ollama. The Compose files map this name to the host gateway on Linux. The provider must listen on an address reachable from containers; a service bound only to host loopback may need configuration. Restrict provider access to trusted clients. `localhost` inside the app container refers to that container.
