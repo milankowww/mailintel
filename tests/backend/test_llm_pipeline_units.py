@@ -522,6 +522,8 @@ def test_prompt_registry_loads_packaged_templates():
         subject="Subject",
         sender_name="Sender",
         sender_address="sender@example.com",
+        recipients="Recipient <recipient@example.com>; other@example.com",
+        cc="copy@example.com",
         unread=True,
         has_attachments=False,
         match_lines="- none",
@@ -573,6 +575,8 @@ def test_prompt_registry_renders_json_example_prompts_without_placeholder_errors
         subject="Subject",
         sender_name="Sender",
         sender_address="sender@example.com",
+        recipients="Recipient <recipient@example.com>; other@example.com",
+        cc="copy@example.com",
         profiles_block="ID: 1\nName: Test\nDescription: Something\nKeyword hints: none",
         source_text="Body",
     )
@@ -581,6 +585,8 @@ def test_prompt_registry_renders_json_example_prompts_without_placeholder_errors
         subject="Subject",
         sender_name="Sender",
         sender_address="sender@example.com",
+        recipients="Recipient <recipient@example.com>; other@example.com",
+        cc="copy@example.com",
         unread=True,
         has_attachments=False,
         profiles_block="(none configured)",
@@ -1510,3 +1516,24 @@ def service_payload(index_map):
         ),
         index_map=list(index_map),
     )
+
+
+@pytest.mark.parametrize("method", ["summarize_message", "analyze_message"])
+def test_single_message_prompt_includes_to_and_cc(monkeypatch, method):
+    service = LLMService()
+    captured = []
+    def completion(*args, **kwargs):
+        captured.extend(kwargs['messages'])
+        return '{"summary_text":"A new report is ready for review.","rationale":"Review requested","confidence":0.9,"matches":[]}'
+    monkeypatch.setattr(service, '_chat_completion', completion)
+    message = sample_message()
+    message.recipients = ['Alice <alice@example.com>', 'bob@example.com']
+    message.cc = ['Carol <carol@example.com>']
+    kwargs = {'interest_matches': []} if method == 'summarize_message' else {'profiles': []}
+    getattr(service, method)(LLMPreset(enabled=True, endpoint_url='http://example.invalid'),
+                            message=message, body_text='Please review the attached report.',
+                            fallback=fallback_summary(), **kwargs)
+    prompt = captured[1]['content']
+    assert 'Sender: DMARC <dmarc@example.com>' in prompt
+    assert 'To: Alice <alice@example.com>; bob@example.com' in prompt
+    assert 'Cc: Carol <carol@example.com>' in prompt

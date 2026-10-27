@@ -112,7 +112,7 @@ Use the history button beside **Search** to revisit previous questions and their
 
 *Previous questions available from the history button beside Search.*
 
-Expand a message’s preview to compare its content with the generated summary. This example shows travel details in the message card.
+Expand a message’s preview to compare its content with the generated summary. Click the triangle beside the sender on the message card to expand the From, To, and Cc details. This example shows travel details in the message card.
 
 ![Expanded message: A travel message with its summary, preview, and scoring explanation.](screenshots/10-rome-itinerary.png)
 

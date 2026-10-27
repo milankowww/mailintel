@@ -10,7 +10,7 @@ function compileInlineVueTemplates() {
     name: "mailintel-inline-template-compiler",
     enforce: "pre",
     transform(code, id) {
-      if (!id.endsWith("/src/main.js") && !id.endsWith("/src/google-oauth-setup.js")) return null;
+      if (!["/src/main.js", "/src/google-oauth-setup.js", "/src/message-addresses.js"].some(path => id.endsWith(path))) return null;
 
       const marker = "template: `";
       let cursor = 0;

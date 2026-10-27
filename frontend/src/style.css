@@ -1631,3 +1631,30 @@ h2 {
 
 .google-setup-steps { padding-left: 1.5rem; margin: 1rem 0; }
 .google-setup-steps li { margin-bottom: .75rem; }
+
+.mail-addresses {
+  white-space: normal;
+  font-size: inherit;
+  overflow-wrap: anywhere;
+}
+
+.mail-addresses summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.mail-addresses summary::-webkit-details-marker { display: none; }
+.mail-addresses-sender::before { content: '▸'; margin-right: 4px; }
+.mail-addresses[open] .mail-addresses-sender::before { content: '▾'; }
+.mail-addresses[open] { margin-bottom: 8px; }
+.mail-addresses dl { color: var(--ink); }
+
+.mail-addresses dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+
+.mail-addresses dt { font-weight: 600; }
+.mail-addresses dd { margin: 0; white-space: pre-wrap; }

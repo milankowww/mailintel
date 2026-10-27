@@ -20,6 +20,8 @@ prompts:
       Now is: {now}
       Subject: {subject}
       Sender: {sender_name} <{sender_address}>
+      To: {recipients}
+      Cc: {cc}
       Unread: {unread}
       Has attachments: {has_attachments}
       Interest matches:
@@ -146,6 +148,8 @@ prompts:
       Now is {now}.
       Subject: {subject}
       Sender: {sender_name} <{sender_address}>
+      To: {recipients}
+      Cc: {cc}
       Unread: {unread}
       Has attachments: {has_attachments}
       Profiles:

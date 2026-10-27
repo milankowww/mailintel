@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 import { GoogleOAuthSetup } from "./google-oauth-setup.js";
+import { createMessageAddresses } from "./message-addresses.js";
 import { createMessageStars } from "./message-stars.js";
 import { createApp, reactive } from "vue";
 import { matchingSources, searchFailureMessage } from "./smart-search-view.js";
@@ -265,8 +266,10 @@ const MessageStarButton = {
     </span>`,
 };
 
+const MailMessageAddresses = createMessageAddresses(fetchJson);
+
 const MailMessageItem = {
-  components: { MessageStarButton },
+  components: { MessageStarButton, MailMessageAddresses },
   props: {
     item: { type: Object, required: true },
     displayMode: { type: String, default: "comfort" },
@@ -327,7 +330,7 @@ const MailMessageItem = {
       if (account && mailbox) return `${account} / ${mailbox}`;
       return account || mailbox || "";
     },
-    metaParts(item) {
+    metaParts(item, position) {
       const parts = [];
       if (item.search_relevance === "supporting") parts.push("supporting evidence");
       if (item.search_relevance === "maybe_relevant") parts.push("possibly relevant");
@@ -338,7 +341,8 @@ const MailMessageItem = {
         parts.push(`${Number(item.importance_score || 0).toFixed(2)} importance`);
       }
       if (this.showReadState) parts.push(item.is_read ? "read" : "unread");
-      if (item.sender_name || item.sender_address) parts.push(item.sender_name || item.sender_address);
+      if (position === "before") return parts.join(" | ");
+      parts.length = 0;
       const received = formatDate(item.received_at || item.date);
       if (received) parts.push(received);
       if (item.has_embeddings) parts.push("searchable");
@@ -392,7 +396,7 @@ const MailMessageItem = {
           />
         </v-card-title>
         <v-card-subtitle>
-          <span>{{ metaParts(item) }}</span>
+          <MailMessageAddresses :item="item" :before="metaParts(item, 'before')" :after="metaParts(item, 'after')" />
           <span v-if="showInterestChips && interestProfiles(item).length" class="mail-interest-chip-row">
             <v-chip
               v-for="profile in interestProfiles(item)"

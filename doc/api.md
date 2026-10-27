@@ -19,3 +19,12 @@ The API covers account and mailbox configuration, triage profiles, model presets
 A token grants access to the whole installation. Keep it private when sharing URLs, source, screenshots, or issue reports. OAuth callback routes validate consent state for the account connection flow.
 
 For implementation details, route modules live under `backend/mailintel/api/routers/` and request models under `backend/mailintel/api/schemas/`.
+
+### Message address details
+
+`GET /api/messages/{message_id}` returns the message and its summary in `message`.
+Address fields are `sender_name`, `sender_address`, `recipients_json` (To), and
+`cc_json` (Cc). Recipient fields are arrays of strings, containing either an
+address or a display name with an address, such as `Alice <alice@example.com>`.
+An empty array means no recipients are listed in that field. Older EWS records
+may contain empty strings until those messages are fetched again.

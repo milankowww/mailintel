@@ -38,3 +38,22 @@ def test_star_routes_validate_values_missing_messages_and_pagination():
     assert client.get('/api/starred').json()["messages"] == []
     route = next(route for route in app.routes if route.path.endswith('/star'))
     assert route.endpoint.mailintel_capability == 'mail.write'
+
+
+def test_message_detail_returns_sender_to_and_cc_with_summary():
+    row = {'id': 7, 'sender_name': 'Sender', 'sender_address': 'sender@example.com',
+           'recipients_json': '["Alice <alice@example.com>", "bob@example.com"]',
+           'cc_json': ['carol@example.com'], 'summary_text': 'Review the report.'}
+    repo = SimpleNamespace(get_message_detail=lambda message_id: row if message_id == 7 else None)
+    app = FastAPI()
+    register_routes(app, SimpleNamespace(repository=repo, dashboard_service=None, chat_service=None))
+    client = TestClient(app)
+    response = client.get('/api/messages/7')
+    assert response.status_code == 200
+    message = response.json()['message']
+    assert message['sender_name'] == 'Sender'
+    assert message['sender_address'] == 'sender@example.com'
+    assert message['recipients_json'] == ['Alice <alice@example.com>', 'bob@example.com']
+    assert message['cc_json'] == ['carol@example.com']
+    assert message['summary_text'] == 'Review the report.'
+    assert client.get('/api/messages/999').status_code == 404
