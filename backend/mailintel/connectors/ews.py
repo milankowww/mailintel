@@ -114,11 +114,11 @@ def _parse_get_item_response_parts(
         sender_name=sender_name,
         sender_address=sender_address,
         recipients=[
-            recipient.findtext("t:Mailbox/t:EmailAddress", default="", namespaces=SOAP_NS)
+            recipient.findtext("t:EmailAddress", default="", namespaces=SOAP_NS)
             for recipient in item.findall("t:ToRecipients/t:Mailbox", SOAP_NS)
         ],
         cc=[
-            recipient.findtext("t:Mailbox/t:EmailAddress", default="", namespaces=SOAP_NS)
+            recipient.findtext("t:EmailAddress", default="", namespaces=SOAP_NS)
             for recipient in item.findall("t:CcRecipients/t:Mailbox", SOAP_NS)
         ],
         received_at=datetime.fromisoformat(received_at_text.replace("Z", "+00:00")) if received_at_text else None,

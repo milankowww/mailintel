@@ -157,6 +157,8 @@ def test_parse_ews_responses():
     </s:Envelope>
     """
     message, body_text, attachments = parse_get_item_response(get_item_xml, "inbox")
+    assert message.recipients == []
+    assert message.cc == []
     assert message.subject == "Board agenda"
     assert message.sender_address == "ceo@example.com"
     assert message.received_at is not None
@@ -262,3 +264,26 @@ def test_ews_bundle_uses_body_limit(monkeypatch):
 
     assert len(bundle.body_text) == 6000
     assert bundle.body_source_segment == "ews-body"
+
+
+def test_ews_parses_all_to_and_cc_recipients_from_mailbox_elements():
+    xml = """
+    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+      <s:Body><t:Message>
+        <t:ItemId Id="recipient-test"/>
+        <t:ToRecipients>
+          <t:Mailbox><t:Name>Alice</t:Name><t:EmailAddress>alice@example.com</t:EmailAddress></t:Mailbox>
+          <t:Mailbox><t:EmailAddress>bob@example.com</t:EmailAddress></t:Mailbox>
+        </t:ToRecipients>
+        <t:CcRecipients>
+          <t:Mailbox><t:Name>Carol</t:Name><t:EmailAddress>carol@example.com</t:EmailAddress></t:Mailbox>
+          <t:Mailbox><t:EmailAddress>dave@example.com</t:EmailAddress></t:Mailbox>
+        </t:CcRecipients>
+        <t:Body BodyType="Text">Synthetic recipient regression test.</t:Body>
+      </t:Message></s:Body>
+    </s:Envelope>
+    """
+    message, _, _ = parse_get_item_response(xml, "inbox")
+    assert message.recipients == ["alice@example.com", "bob@example.com"]
+    assert message.cc == ["carol@example.com", "dave@example.com"]
