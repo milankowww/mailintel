@@ -5,6 +5,8 @@ SPDX-License-Identifier: EUPL-1.2
 
 # MailIntel
 
+[![CI](https://github.com/milankowww/mailintel/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/milankowww/mailintel/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush)
+
 MailIntel is a self-hosted application for secure AI-assisted email analysis, prioritization, and search, built around read-only mailbox access and controlled processing.
 
 Many people use agentic AI to process their e-mail. That is very risky:
