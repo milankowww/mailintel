@@ -194,8 +194,6 @@ class PromptRegistry:
 
 
 SEARCH_QUERY_TOKEN_RE = re.compile(r"[^\W_]+")
-SUMMARY_TOKEN_RE = re.compile(r"[^\W_]+")
-SUMMARY_QUOTE_RE = re.compile(r'["“”]([^"“”]{20,})["“”]')
 SEARCH_QUERY_STOPWORDS = {
     "a",
     "about",
@@ -667,8 +665,8 @@ class LLMService:
         parsed = self._extract_json_payload(content)
 
         summary_text = str(parsed.get("summary_text") or "").strip()
-        if not summary_text or self._looks_extractive_summary(summary_text, source_text):
-            raise LLMSummaryError("LLM summary was empty or too extractive")
+        if not summary_text:
+            raise LLMSummaryError("LLM summary was empty")
         return MessageSummary(
             message_id=fallback.message_id,
             summary_text=summary_text,
@@ -1114,8 +1112,8 @@ class LLMService:
         )
         parsed = self._extract_json_payload(content)
         summary_text = str(parsed.get("summary_text") or "").strip()
-        if not summary_text or self._looks_extractive_summary(summary_text, source_text):
-            raise LLMSummaryError("LLM summary was empty or too extractive")
+        if not summary_text:
+            raise LLMSummaryError("LLM summary was empty")
 
         matches: list[InterestMatch] = []
         if valid_ids:
@@ -1652,49 +1650,6 @@ class LLMService:
             normalized_tokens.append(token)
             seen_tokens.add(token)
         return " ".join(normalized_tokens)
-
-    @classmethod
-    def _looks_extractive_summary(cls, summary_text: str, source_text: str) -> bool:
-        normalized_summary = cls._normalize_summary_text(summary_text)
-        normalized_source = cls._normalize_summary_text(source_text)
-        if not normalized_summary or not normalized_source:
-            return False
-        if len(normalized_summary) >= 32 and normalized_summary in normalized_source:
-            return True
-        for match in SUMMARY_QUOTE_RE.finditer(summary_text):
-            normalized_quote = cls._normalize_summary_text(match.group(1))
-            if len(normalized_quote) >= 24 and normalized_quote in normalized_source:
-                return True
-        summary_tokens = cls._summary_tokens(summary_text)
-        source_tokens = cls._summary_tokens(source_text)
-        if len(summary_tokens) < 6 or not source_tokens:
-            return False
-        longest_run = cls._longest_common_token_run(summary_tokens, source_tokens)
-        return longest_run >= max(7, int(len(summary_tokens) * 0.75 + 0.5))
-
-    @staticmethod
-    def _normalize_summary_text(text: str) -> str:
-        return " ".join(SUMMARY_TOKEN_RE.findall(text.lower()))
-
-    @staticmethod
-    def _summary_tokens(text: str) -> list[str]:
-        return SUMMARY_TOKEN_RE.findall(text.lower())
-
-    @staticmethod
-    def _longest_common_token_run(left: list[str], right: list[str]) -> int:
-        positions: dict[str, list[int]] = {}
-        for index, token in enumerate(right):
-            positions.setdefault(token, []).append(index)
-        best = 0
-        previous: dict[int, int] = {}
-        for token in left:
-            current: dict[int, int] = {}
-            for index in positions.get(token, []):
-                current[index] = previous.get(index - 1, 0) + 1
-                if current[index] > best:
-                    best = current[index]
-            previous = current
-        return best
 
     def _chat_completion(
         self, 
