@@ -80,6 +80,8 @@ Use message stars to bookmark messages inside MailIntel. Stars persist in the ap
 
 Use the **Daily**, **Weekly**, and **Monthly** tabs to review correspondence over different periods. Select a day, week, or month in the picker. Summaries are grouped by mailbox; **Open messages** lets you inspect the evidence behind each item.
 
+If a linked message cannot be loaded, the other messages remain available and a notice shows how many failed. Close and reopen the entry to retry.
+
 ### Daily
 
 ![Daily summary: A selected day’s mailbox summaries with links to supporting messages.](screenshots/05-daily-summary.png)

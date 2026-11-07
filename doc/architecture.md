@@ -15,6 +15,8 @@ MailIntel runs a FastAPI application, a Vue/Vuetify frontend, and background pro
 4. Interval jobs build mailbox summaries. Search jobs retrieve indexed evidence and use configured models to plan, compress, and answer.
 5. The browser reads API views and submits configuration or processing requests.
 
+Daily, weekly, and monthly summaries include links to contributing messages. Each model response is checked against the IDs supplied in that input batch; merge passes check their temporary entry IDs before translating them back to message IDs. A reference outside the supplied input rejects the response and retries the job through the work queue.
+
 Mail content is untrusted input, including instructions an attacker might embed in a message. Model calls are constrained application operations scoped to analysis and retrieval. Mailbox credentials stay with the connectors, and model outputs become derived data in the application database. This keeps AI mistakes confined to analysis: sending, deleting, or modifying mail is outside the model’s authority. Users review the results and decide what action to take.
 
 The backend accesses configured mail and model servers. Operators can choose cloud-based frontier models, sharing the submitted email content with their provider, or small local models that keep inference within their own infrastructure.

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Any
 
 from mailintel.services.llm import LLMContentValidationError, LLMInputError
@@ -125,7 +126,7 @@ class IntervalQueue:
                 period_days=payload["period_days"], mailbox_name=payload["mailbox_name"], source_text=source,
                 user_context=payload["user_context"], priority=int(job["priority"]), client_id="interval",
             )
-            generated = (self.pipeline._expand_interval_merge_entries(result, id_map) if merge else self.pipeline._interval_summary_entries(result))
+            generated = self.pipeline._interval_summary_entries(result)
             if not generated:
                 raise LLMContentValidationError("Interval summary did not include valid evidence entries")
         except LLMInputError:
@@ -142,7 +143,14 @@ class IntervalQueue:
             if not merge:
                 raise
             return self._merge_fallback(repository, payload, entries)
+        # Check the IDs supplied to this call, before expanding merge references.
+        # Keep this outside the merge fallback: invalid references must retry.
+        allowed_ids = set(id_map) if merge else self._source_message_ids(batches[index])
+        unexpected_ids = {mid for entry in generated for mid in entry["message_ids"]} - allowed_ids
+        if unexpected_ids:
+            raise LLMContentValidationError("Interval summary referenced IDs outside its input")
         if merge:
+            generated = self.pipeline._expand_interval_merge_entries(result, id_map)
             return lambda: self._store(repository, payload, generated)
         payload["entries"] = self.pipeline._dedupe_interval_summary_entries(entries + generated)
         payload["index"] = int(payload["index"]) + 1
@@ -153,6 +161,19 @@ class IntervalQueue:
             return lambda: self._continue(repository, job, payload)
         else:
             return lambda: self._store(repository, payload, payload["entries"])
+
+    @staticmethod
+    def _source_message_ids(source: str) -> set[int]:
+        # Read only application-generated record prefixes, not numbers in mail text.
+        ids = set()
+        for line in source.splitlines():
+            daily = re.match(r"^- mail_id=(\d+);", line)
+            rollup = re.match(r"^- \d{4}-\d{2}-\d{2}; mail_ids=\[([\d, ]+)\]:", line)
+            if daily:
+                ids.add(int(daily[1]))
+            elif rollup:
+                ids.update(int(value.strip()) for value in rollup[1].split(","))
+        return ids
 
     def _merge_fallback(self, repository: Any, payload: dict, entries: list):
         # Preserve existing evidence if a merge cannot fit or emits invalid JSON.

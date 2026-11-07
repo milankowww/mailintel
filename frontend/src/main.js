@@ -498,17 +498,23 @@ const SummaryEntryItem = {
     async toggleMessages() {
       if (!this.messageCount) return;
       this.expanded = !this.expanded;
-      if (!this.expanded || this.messages.length || this.loading) return;
+      if (!this.expanded || (this.messages.length && !this.error) || this.loading) return;
       this.loading = true;
       this.error = "";
       try {
-        const responses = await Promise.all(
+        const responses = await Promise.allSettled(
           this.messageIds.map((id) => fetchJson(`/api/messages/${id}`).then((data) => data.message))
         );
-        this.messages = responses.map((message) => ({
-          ...message,
-          has_summary: Boolean(message.summary_text),
-        }));
+        this.messages = responses
+          .filter((response) => response.status === "fulfilled")
+          .map(({ value: message }) => ({
+            ...message,
+            has_summary: Boolean(message.summary_text),
+          }));
+        const failedCount = responses.length - this.messages.length;
+        if (failedCount) {
+          this.error = `${failedCount} of ${responses.length} messages could not be loaded. Close and reopen to retry.`;
+        }
       } catch (error) {
         this.error = error.message;
       } finally {
@@ -536,7 +542,7 @@ const SummaryEntryItem = {
       <div v-if="expanded" class="summary-entry-messages">
         <p v-if="error" class="subtle">{{ error }}</p>
         <MailMessageList
-          v-else
+          v-if="messages.length || loading"
           :items="messages"
           empty-message="Loading messages..."
           :display-mode="displayMode"
