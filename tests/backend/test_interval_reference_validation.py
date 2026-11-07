@@ -78,3 +78,75 @@ def test_source_ids_are_only_taken_from_record_prefixes():
         '- mail_id=101; 2026-11-04; Sender; Ticket 1, mail_id=999\n'
         '- 2026-11-05; mail_ids=[102, 103]: mail_ids=[888], ticket 2'
     ) == {101, 102, 103}
+
+
+@pytest.mark.parametrize('value', [True, False, 1.5, 101.0, '101.0', '1e2', 'abc', '', '0', '-1', None, 0, -1])
+def test_interval_ids_are_positive_json_integers(value):
+    from mailintel.services.llm import LLMService, LLMContentValidationError
+    with pytest.raises(LLMContentValidationError, match='positive integers'):
+        LLMService()._normalize_interval_summary_payload({
+            'entries': [{'summary': 'Example.', 'message_ids': [101, value]}],
+        })
+
+
+def test_interval_ids_accept_and_deduplicate_integer_strings():
+    from mailintel.services.llm import LLMService
+    result = LLMService()._normalize_interval_summary_payload({
+        'entries': [{'summary': 'Example.', 'message_ids': ['101', 101, '102']}],
+    })
+    assert result['entries'][0]['message_ids'] == [101, 102]
+
+
+@pytest.mark.parametrize('kind', ['daily', 'weekly', 'monthly'])
+def test_multiline_fields_stay_in_one_batch_record(kind):
+    from datetime import date
+    repository = Mock()
+    repository.list_daily_summary_inputs.return_value = [
+        {'id': i, 'subject': 'Subject\ncontinued', 'sender_name': 'Sender\nName',
+         'summary_text': 'First sentence.\nSecond sentence.'}
+        for i in range(1, 34)
+    ]
+    repository.list_rollup_summary_inputs.return_value = [{
+        'interval_start_date': date(2026, 11, 1),
+        'summary_json': {'entries': [
+            {'summary': 'First sentence.\nSecond sentence.', 'message_ids': [i]}
+            for i in range(1, 34)
+        ]},
+    }]
+    pipeline = SimpleNamespace(
+        _interval_summary_entries=PipelineRuntime._interval_summary_entries,
+        _summary_user_context=lambda repo: '',
+        _interval_summary_source_batches=PipelineRuntime._interval_summary_source_batches,
+    )
+    payload = IntervalQueue(pipeline)._payload(repository, {
+        'id': 9, 'mailbox_id': 1, 'summary_type': kind,
+        'interval_start_date': date(2026, 11, 1), 'period_days': 1 if kind == 'daily' else 7,
+    }, 'UTC')
+    assert [len(batch.splitlines()) for batch in payload['batches']] == [32, 1]
+    assert IntervalQueue._source_message_ids(payload['batches'][0]) == set(range(1, 33))
+    assert IntervalQueue._source_message_ids(payload['batches'][1]) == {33}
+    assert all('First sentence. Second sentence.' in line for batch in payload['batches'] for line in batch.splitlines())
+
+
+@pytest.mark.parametrize('kind', ['daily', 'weekly', 'monthly'])
+@pytest.mark.parametrize('phase', ['batch', 'merge'])
+def test_final_entry_preserves_ungrouped_ids(kind, phase):
+    queue = IntervalQueue(SimpleNamespace())
+    queue._current = lambda *args: True
+    repository = Mock()
+    repository.get_pipeline_settings.return_value = {}
+    source = ('- mail_id=101; First\n- mail_id=102; Second\n- mail_id=103; Third'
+              if kind == 'daily' else '- 2026-11-01; mail_ids=[101, 102, 103]: Three messages')
+    payload = {'summary_id': 9, 'batches': [source], 'phase': phase}
+    entries = [{'summary': 'Grouped.', 'message_ids': [101]}]
+    queue._store(repository, payload, entries)
+    saved = repository.mark_interval_summary_fresh.call_args.args[1]['entries']
+    assert saved == entries + [{'summary': 'Other messages', 'message_ids': [102, 103]}]
+    # Complete coverage produces no synthetic row; an empty result retains all IDs.
+    repository.reset_mock()
+    queue._store(repository, payload, [{'summary': 'Complete.', 'message_ids': [101, 102, 103]}])
+    assert len(repository.mark_interval_summary_fresh.call_args.args[1]['entries']) == 1
+    queue._store(repository, payload, [])
+    assert repository.mark_interval_summary_fresh.call_args.args[1]['entries'] == [
+        {'summary': 'Other messages', 'message_ids': [101, 102, 103]},
+    ]

@@ -710,12 +710,8 @@ class PipelineRuntime:
                 continue
             message_ids = []
             for value in raw_ids:
-                try:
-                    message_id = int(value)
-                except (TypeError, ValueError):
-                    continue
-                if message_id > 0 and message_id not in message_ids:
-                    message_ids.append(message_id)
+                if type(value) is int and value > 0 and value not in message_ids:
+                    message_ids.append(value)
             key = (summary.lower(), tuple(message_ids))
             if message_ids and key not in seen:
                 result.append({"summary": summary, "message_ids": message_ids})
@@ -751,12 +747,8 @@ class PipelineRuntime:
                 continue
             message_ids = []
             for value in raw_ids:
-                try:
-                    message_id = int(value)
-                except (TypeError, ValueError):
-                    continue
-                if message_id > 0 and message_id not in message_ids:
-                    message_ids.append(message_id)
+                if type(value) is int and value > 0 and value not in message_ids:
+                    message_ids.append(value)
             summary = " ".join(str(entry.get("summary") or "").split()).strip()
             if not message_ids or not summary:
                 continue
@@ -804,12 +796,8 @@ class PipelineRuntime:
                 continue
             message_ids = []
             for value in raw_ids:
-                try:
-                    message_id = int(value)
-                except (TypeError, ValueError):
-                    continue
-                if message_id > 0 and message_id not in message_ids:
-                    message_ids.append(message_id)
+                if type(value) is int and value > 0 and value not in message_ids:
+                    message_ids.append(value)
             if message_ids:
                 normalized.append({"summary": summary, "message_ids": message_ids})
         return normalized

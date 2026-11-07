@@ -61,7 +61,8 @@ class IntervalQueue:
                 for entry in self.pipeline._interval_summary_entries(item.get("summary_json")):
                     ids = ", ".join(str(value) for value in entry["message_ids"])
                     lines.append(f"- {item['interval_start_date']}; mail_ids=[{ids}]: {entry['summary']}")
-        source = "\n".join(lines)
+        # Each application record occupies one line, even when mail fields contain newlines.
+        source = "\n".join(" ".join(line.split()) for line in lines)
         if not source and not row.get("request_rebuild"):
             return
         context = self.pipeline._summary_user_context(repository)
@@ -189,6 +190,11 @@ class IntervalQueue:
     def _store(self, repository: Any, payload: dict, entries: list, fallback: bool = False) -> None:
         if not self._current(repository, payload):
             return
+        input_ids = set().union(*(self._source_message_ids(batch) for batch in payload["batches"]))
+        grouped_ids = {mid for entry in entries for mid in entry["message_ids"]}
+        remaining_ids = sorted(input_ids - grouped_ids)
+        if remaining_ids:
+            entries = [*entries, {"summary": "Other messages", "message_ids": remaining_ids}]
         summary_id = int(payload["summary_id"])
         if fallback:
             repository.mark_interval_summary_merge_fallback(summary_id, {"entries": entries})

@@ -82,6 +82,8 @@ Use the **Daily**, **Weekly**, and **Monthly** tabs to review correspondence ove
 
 If a linked message cannot be loaded, the other messages remain available and a notice shows how many failed. Close and reopen the entry to retry.
 
+A final **Other messages** entry provides links to messages the model left out of its groups.
+
 ### Daily
 
 ![Daily summary: A selected day’s mailbox summaries with links to supporting messages.](screenshots/05-daily-summary.png)

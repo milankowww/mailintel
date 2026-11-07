@@ -949,12 +949,12 @@ class LLMService:
                 continue
             message_ids: list[int] = []
             for value in raw_message_ids:
-                try:
-                    message_id = int(value)
-                except (TypeError, ValueError):
-                    continue
-                if message_id > 0 and message_id not in message_ids:
-                    message_ids.append(message_id)
+                if isinstance(value, str) and re.fullmatch(r"[0-9]+", value):
+                    value = int(value)
+                if type(value) is not int or value <= 0:
+                    raise LLMContentValidationError("Interval message IDs must be positive integers")
+                if value not in message_ids:
+                    message_ids.append(value)
             if not message_ids:
                 continue
             normalized_entries.append({"summary": summary, "message_ids": message_ids})
