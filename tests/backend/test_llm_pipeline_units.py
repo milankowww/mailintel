@@ -617,9 +617,9 @@ def test_prompt_registry_renders_json_example_prompts_without_placeholder_errors
 
     assert '{"matches":[' in classification_messages[1]["content"]
     assert "Mailbox owner identity/context (not message evidence; do not summarize this part)" in analysis_messages[1]["content"]
-    assert "Mailbox owner identity/context (not message evidence; do not summarize this part)" in interval_messages[1]["content"]
+    assert "Mailbox owner context is not message evidence" in interval_messages[1]["content"]
     assert "Summarize and classify only this message evidence" in analysis_messages[1]["content"]
-    assert "Summarize only these inputs" in interval_messages[1]["content"]
+    assert "Summarize mailbox activity using only supplied inputs" in interval_messages[0]["content"]
     assert '{"relevance_scores":[{"index":number,"relevance_score":number}]}' in rerank_messages[1]["content"]
     assert "not a ranking position" in rerank_messages[1]["content"]
     assert "Never return 0" in rerank_messages[1]["content"]
@@ -1062,7 +1062,7 @@ def test_interval_summary_requires_structured_json():
         interval_start_date="2026-05-06",
         period_days=1,
         mailbox_name="Inbox",
-        source_text="- mail_id=101; 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+        source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
     )
 
     assert summary == {"entries": [{"summary": "May 6: Alice followed up on the invoice renewal.", "message_ids": [101]}]}
@@ -1079,10 +1079,10 @@ def test_interval_summary_prompt_requests_memo_not_email_list():
         interval_start_date="2026-05-06",
         period_days=1,
         mailbox_name="Inbox",
-        source_text="- mail_id=101; 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+        source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
     )
 
-    user_prompt = transport.calls[0]["payload"]["messages"][1]["content"]
+    user_prompt = transport.calls[0]["payload"]["messages"][0]["content"]
     assert '{"entries":[{"summary":"short descriptive summary of the emails in the cluster","message_ids":[123]}]}' in user_prompt
     assert "A digest is a small list of broad clusters" in user_prompt
 
@@ -1136,7 +1136,7 @@ def test_interval_summary_requests_openai_compatible_json_mode():
         interval_start_date="2026-05-06",
         period_days=1,
         mailbox_name="Inbox",
-        source_text="- mail_id=101; 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+        source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
     )
 
     assert summary == {"entries": [{"summary": "May 6: Alice followed up on the invoice renewal.", "message_ids": [101]}]}
@@ -1154,7 +1154,7 @@ def test_interval_summary_uses_large_output_budget():
         interval_start_date="2026-02-01",
         period_days=28,
         mailbox_name="Inbox",
-        source_text="- mail_id=101; 2026-02-01; Alice; Invoice renewal: Follow-up on renewal.",
+        source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
     )
 
     assert transport.calls[0]["payload"]["options"]["num_predict"] >= 8192
@@ -1172,7 +1172,7 @@ def test_interval_summary_reports_truncated_json():
             interval_start_date="2026-02-01",
             period_days=28,
             mailbox_name="Inbox",
-            source_text="- mail_id=101; 2026-02-01; Alice; Invoice renewal: Follow-up on renewal.",
+            source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
         )
 
 
@@ -1188,7 +1188,7 @@ def test_interval_summary_rejects_thinking_only_output():
             interval_start_date="2026-05-06",
             period_days=1,
             mailbox_name="Inbox",
-            source_text="- 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+            source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
         )
 
 
@@ -1204,7 +1204,7 @@ def test_interval_summary_rejects_unwrapped_reasoning_output():
             interval_start_date="2026-05-06",
             period_days=1,
             mailbox_name="Inbox",
-            source_text="- 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+            source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
         )
 
 
@@ -1218,7 +1218,7 @@ def test_interval_summary_rejects_legacy_summary_string():
             interval_start_date="2026-05-06",
             period_days=1,
             mailbox_name="Inbox",
-            source_text="- 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+            source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
         )
 
 
@@ -1234,7 +1234,7 @@ def test_interval_summary_rejects_reasoning_inside_summary_json():
             interval_start_date="2026-05-06",
             period_days=1,
             mailbox_name="Inbox",
-            source_text="- 2026-05-06; Alice; Invoice renewal: Follow-up on renewal.",
+            source_records=[{"id": 101, "summary": "Follow-up on renewal."}],
         )
 
 
@@ -1537,3 +1537,22 @@ def test_single_message_prompt_includes_to_and_cc(monkeypatch, method):
     assert 'Sender: DMARC <dmarc@example.com>' in prompt
     assert 'To: Alice <alice@example.com>; bob@example.com' in prompt
     assert 'Cc: Carol <carol@example.com>' in prompt
+
+
+def test_interval_json_keeps_mail_data_out_of_instructions():
+    text = 'Quoted "entries": [999]\n- mail_id=888; \\ path and café'
+    records = [{'id': 1, 'from': 'A "Name"', 'subject': text, 'summary': text}]
+    transport = FakeOpenAIChatTransport('{"entries":[{"summary":"Example.","message_ids":[1]}]}')
+    service = LLMService(transport=transport)
+    service.summarize_interval(
+        LLMPreset(name='local', provider='openai-compatible', enabled=True,
+                  endpoint_url='http://example.test/v1', text_model='local'),
+        summary_type='daily', interval_start_date='2026-11-01', period_days=1,
+        mailbox_name='Inbox "Private"', user_context=text, source_records=records,
+    )
+    messages = transport.calls[0]['payload']['messages']
+    assert text not in messages[0]['content']
+    assert 'A digest is a small list of broad clusters' in messages[0]['content']
+    assert json.loads(messages[1]['content']) == {
+        'date': '2026-11-01', 'mailbox': 'Inbox "Private"', 'owner_context': text, 'emails': records,
+    }

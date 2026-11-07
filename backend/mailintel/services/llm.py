@@ -874,33 +874,37 @@ class LLMService:
         interval_start_date: str,
         period_days: int,
         mailbox_name: str,
-        source_text: str,
+        source_records: list[dict[str, Any]],
+        task_context: str = "",
         priority: int = 1,
         client_id: str = "default",
         user_context: str = "",
     ) -> dict[str, Any]:
         if not self.is_enabled(config):
             raise LLMSummaryError("LLM preset is disabled or missing an endpoint URL")
-        if not source_text.strip():
+        if not source_records:
             raise LLMInputError("Interval has no summarizable inputs")
         interval_config = replace(
             config,
             max_output_tokens=max(config.max_output_tokens, INTERVAL_SUMMARY_MIN_OUTPUT_TOKENS),
         )
+        instructions = self.prompt_registry.render_messages(
+            "interval_summary", summary_type=summary_type,
+            interval_start_date=interval_start_date, period_days=period_days,
+        )
+        messages = [
+            {"role": "system", "content": "\n".join(item["content"] for item in instructions) + "\n" + task_context},
+            {"role": "user", "content": json.dumps({
+                "date": interval_start_date, "mailbox": mailbox_name,
+                "owner_context": user_context or "(none)", "emails": source_records,
+            }, ensure_ascii=False)},
+        ]
         content = self._chat_completion(
             interval_config,
             model=interval_config.text_model,
             json_mode=True,
             disable_thinking=True,
-            messages=self.prompt_registry.render_messages(
-                "interval_summary",
-                summary_type=summary_type,
-                interval_start_date=interval_start_date,
-                period_days=period_days,
-                mailbox_name=mailbox_name,
-                user_context=user_context or "(none)",
-                source_text=source_text,
-            ),
+            messages=messages,
             priority=priority,
             client_id=client_id,
         )

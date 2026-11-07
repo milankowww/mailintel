@@ -187,15 +187,9 @@ prompts:
       Return exactly:
       {{"entries":[{{"summary":"short descriptive summary of the emails in the cluster","message_ids":[123]}}]}}
 
-      Mailbox owner identity/context (not message evidence; do not summarize this part):
-      {user_context}
+      Mailbox owner context is not message evidence; do not summarize it.
       Use this only to identify the mailbox owner and disambiguate names, aliases, usernames, and email addresses.
       Do not infer actions, places, relationships, or facts from this context unless the supplied email/input also supports them.
-
-      Mailbox: {mailbox_name}
-      Summarize only these inputs:
-      Inputs:
-      {source_text}
 
   topic_labeling:
     description: Create a human-readable topic label for related emails.

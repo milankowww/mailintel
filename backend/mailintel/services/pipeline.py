@@ -689,14 +689,9 @@ class PipelineRuntime:
 
 
     @staticmethod
-    def _interval_summary_source_batches(source_text: str) -> list[str]:
-        lines = [line for line in source_text.splitlines() if line.strip()]
-        if len(lines) <= INTERVAL_SUMMARY_INPUT_BATCH_SIZE:
-            return [source_text]
-        batches = []
-        for index in range(0, len(lines), INTERVAL_SUMMARY_INPUT_BATCH_SIZE):
-            batches.append("\n".join(lines[index : index + INTERVAL_SUMMARY_INPUT_BATCH_SIZE]))
-        return batches
+    def _interval_summary_source_batches(records: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+        return [records[index:index + INTERVAL_SUMMARY_INPUT_BATCH_SIZE]
+                for index in range(0, len(records), INTERVAL_SUMMARY_INPUT_BATCH_SIZE)]
 
 
     @staticmethod
@@ -720,58 +715,28 @@ class PipelineRuntime:
 
 
     @staticmethod
-    def _interval_entries_source_text(entries: list[dict[str, Any]]) -> str:
-        lines = []
-        for entry in entries:
-            message_ids = entry.get("message_ids")
-            if not isinstance(message_ids, list):
-                continue
-            ids = ", ".join(str(message_id) for message_id in message_ids)
-            summary = " ".join(str(entry.get("summary") or "").split()).strip()
-            if ids and summary:
-                lines.append(f"- mail_ids=[{ids}]: {summary}")
-        return "\n".join(lines)
-
-
-    @staticmethod
-    def _interval_merge_source_text(entries: list[dict[str, Any]]) -> tuple[str, dict[int, list[int]]]:
-        """Render preliminary entries as fake mail rows for the final merge pass.
-
-        The model sees the existing prompt shape, but the IDs are compact entry references.
-        """
-        lines = []
-        id_map: dict[int, list[int]] = {}
-        for index, entry in enumerate(entries, start=1):
-            raw_ids = entry.get("message_ids")
-            if not isinstance(raw_ids, list):
-                continue
-            message_ids = []
-            for value in raw_ids:
-                if type(value) is int and value > 0 and value not in message_ids:
-                    message_ids.append(value)
-            summary = " ".join(str(entry.get("summary") or "").split()).strip()
-            if not message_ids or not summary:
-                continue
-            synthetic_id = len(id_map) + 1
-            id_map[synthetic_id] = message_ids
-            lines.append(f"- mail_id={synthetic_id}; {summary}")
-        return "\n".join(lines), id_map
+    def _interval_summary_source(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[int, list[int]]]:
+        """Give each evidence record a compact ID; retain its message links locally."""
+        inputs = []
+        id_map = {}
+        for number, record in enumerate(records, start=1):
+            id_map[number] = record["message_ids"]
+            inputs.append({"id": number, **{key: value for key, value in record.items() if key != "message_ids"}})
+        return inputs, id_map
 
 
     @classmethod
-    def _expand_interval_merge_entries(
+    def _expand_interval_summary_entries(
         cls,
         summary_json: object,
         id_map: dict[int, list[int]],
     ) -> list[dict[str, Any]]:
-        # Convert merge-output synthetic IDs back to real message IDs before storing.
-        # Unknown IDs are ignored; if that leaves no valid entries, the caller keeps the
-        # deduplicated pre-merge entries instead of losing the whole interval.
+        # IDs have already been checked against this call's map.
         expanded = []
         for entry in cls._interval_summary_entries(summary_json):
             message_ids = []
             for synthetic_id in entry["message_ids"]:
-                for message_id in id_map.get(int(synthetic_id), []):
+                for message_id in id_map[synthetic_id]:
                     if message_id not in message_ids:
                         message_ids.append(message_id)
             if message_ids:

@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from typing import Any
 
 from mailintel.services.llm import LLMContentValidationError, LLMInputError
@@ -48,27 +47,26 @@ class IntervalQueue:
         daily = row["summary_type"] == "daily"
         if daily:
             inputs = repository.list_daily_summary_inputs(int(row["mailbox_id"]), row["interval_start_date"], timezone)
-            lines = []
+            records = []
             for item in inputs:
                 received = item.get("received_at")
                 day = received.date().isoformat() if hasattr(received, "date") else str(row["interval_start_date"])
                 sender = item.get("sender_name") or item.get("sender_address") or "unknown sender"
-                lines.append(f"- mail_id={int(item['id'])}; {day}; {sender}; {item.get('subject') or '(no subject)'}: {item.get('summary_text') or item.get('preview_text') or ''}")
+                records.append({"message_ids": [int(item["id"])], "date": day,
+                                "from": sender, "subject": item.get("subject") or "(no subject)",
+                                "summary": item.get("summary_text") or item.get("preview_text") or ""})
         else:
             inputs = repository.list_rollup_summary_inputs(int(row["mailbox_id"]), row["interval_start_date"], int(row["period_days"]))
-            lines = []
+            records = []
             for item in inputs:
                 for entry in self.pipeline._interval_summary_entries(item.get("summary_json")):
-                    ids = ", ".join(str(value) for value in entry["message_ids"])
-                    lines.append(f"- {item['interval_start_date']}; mail_ids=[{ids}]: {entry['summary']}")
-        # Each application record occupies one line, even when mail fields contain newlines.
-        source = "\n".join(" ".join(line.split()) for line in lines)
-        if not source and not row.get("request_rebuild"):
+                    records.append({**entry, "date": str(item["interval_start_date"])})
+        if not records and not row.get("request_rebuild"):
             return
         context = self.pipeline._summary_user_context(repository)
         mailbox_name = str(row.get("mailbox_name") or row.get("provider_mailbox_id") or row["mailbox_id"])
         revision = hashlib.sha256(json.dumps([
-            source, context, str(row.get("request_rebuild") or ""), timezone, mailbox_name,
+            records, context, str(row.get("request_rebuild") or ""), timezone, mailbox_name,
             row["summary_type"], str(row["interval_start_date"]), int(row["period_days"]),
         ], ensure_ascii=False).encode()).hexdigest()
         payload = {
@@ -76,7 +74,7 @@ class IntervalQueue:
             "summary_type": str(row["summary_type"]), "interval_start_date": str(row["interval_start_date"]),
             "period_days": int(row["period_days"]),
             "mailbox_name": str(row.get("mailbox_name") or row.get("provider_mailbox_id") or row["mailbox_id"]),
-            "batches": self.pipeline._interval_summary_source_batches(source) if source else [],
+            "batches": self.pipeline._interval_summary_source_batches(records),
             "index": 0, "entries": [], "phase": "batch", "user_context": context,
         }
         return payload
@@ -107,24 +105,27 @@ class IntervalQueue:
 
     def handle(self, repository: Any, job: dict, preset: Any):
         payload = dict(job["payload"])
+        if not self._current(repository, payload):
+            return lambda: None
         batches = list(payload["batches"])
         entries = list(payload["entries"])
         merge = payload["phase"] == "merge"
         if not batches:
             return lambda: self._store(repository, payload, [])
         if merge:
-            source, id_map = self.pipeline._interval_merge_source_text(entries)
-            source = "These are preliminary evidence entries for the same interval. Merge related entries into a concise interval summary. Do not keep one entry per email when several entries describe the same topic.\n" + source
+            records = entries
+            task_context = "These are preliminary evidence entries for the same interval. Merge related entries into a concise interval summary. Do not keep one entry per email when several entries describe the same topic."
         else:
             index = int(payload["index"])
-            source = batches[index]
-            if len(batches) > 1:
-                source = f"Input batch {index + 1} of {len(batches)} for the same interval. Return entries only for this batch.\n{source}"
+            records = batches[index]
+            task_context = (f"Input batch {index + 1} of {len(batches)} for the same interval. Return entries only for this batch."
+                            if len(batches) > 1 else "")
+        source_records, id_map = self.pipeline._interval_summary_source(records)
         repository.rollback()
         try:
             result = self.pipeline.llm_service.summarize_interval(
                 preset, summary_type=payload["summary_type"], interval_start_date=payload["interval_start_date"],
-                period_days=payload["period_days"], mailbox_name=payload["mailbox_name"], source_text=source,
+                period_days=payload["period_days"], mailbox_name=payload["mailbox_name"], source_records=source_records, task_context=task_context,
                 user_context=payload["user_context"], priority=int(job["priority"]), client_id="interval",
             )
             generated = self.pipeline._interval_summary_entries(result)
@@ -132,12 +133,12 @@ class IntervalQueue:
                 raise LLMContentValidationError("Interval summary did not include valid evidence entries")
         except LLMInputError:
             if not merge:
-                lines = batches[int(payload["index"])].splitlines()
-                if len(lines) < 2:
+                records = batches[int(payload["index"])]
+                if len(records) < 2:
                     raise
-                middle = len(lines) // 2
+                middle = len(records) // 2
                 index = int(payload["index"])
-                payload["batches"] = batches[:index] + ["\n".join(lines[:middle]), "\n".join(lines[middle:])] + batches[index + 1:]
+                payload["batches"] = batches[:index] + [records[:middle], records[middle:]] + batches[index + 1:]
                 return lambda: self._continue(repository, job, payload)
             return self._merge_fallback(repository, payload, entries)
         except LLMContentValidationError:
@@ -146,12 +147,12 @@ class IntervalQueue:
             return self._merge_fallback(repository, payload, entries)
         # Check the IDs supplied to this call, before expanding merge references.
         # Keep this outside the merge fallback: invalid references must retry.
-        allowed_ids = set(id_map) if merge else self._source_message_ids(batches[index])
+        allowed_ids = set(id_map)
         unexpected_ids = {mid for entry in generated for mid in entry["message_ids"]} - allowed_ids
         if unexpected_ids:
             raise LLMContentValidationError("Interval summary referenced IDs outside its input")
+        generated = self.pipeline._expand_interval_summary_entries(result, id_map)
         if merge:
-            generated = self.pipeline._expand_interval_merge_entries(result, id_map)
             return lambda: self._store(repository, payload, generated)
         payload["entries"] = self.pipeline._dedupe_interval_summary_entries(entries + generated)
         payload["index"] = int(payload["index"]) + 1
@@ -164,17 +165,8 @@ class IntervalQueue:
             return lambda: self._store(repository, payload, payload["entries"])
 
     @staticmethod
-    def _source_message_ids(source: str) -> set[int]:
-        # Read only application-generated record prefixes, not numbers in mail text.
-        ids = set()
-        for line in source.splitlines():
-            daily = re.match(r"^- mail_id=(\d+);", line)
-            rollup = re.match(r"^- \d{4}-\d{2}-\d{2}; mail_ids=\[([\d, ]+)\]:", line)
-            if daily:
-                ids.add(int(daily[1]))
-            elif rollup:
-                ids.update(int(value.strip()) for value in rollup[1].split(","))
-        return ids
+    def _source_message_ids(records: list[dict]) -> set[int]:
+        return {mid for record in records for mid in record["message_ids"]}
 
     def _merge_fallback(self, repository: Any, payload: dict, entries: list):
         # Preserve existing evidence if a merge cannot fit or emits invalid JSON.

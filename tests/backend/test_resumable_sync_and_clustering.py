@@ -481,13 +481,11 @@ def test_unreachable_mailbox_primary_error_is_friendly_and_job_keeps_detail():
 
 def test_interval_summary_source_batches_bound_large_days():
     line_count = pipeline_module.INTERVAL_SUMMARY_INPUT_BATCH_SIZE + 1
-    source_text = "\n".join(f"- mail_id={index}; summary {index}" for index in range(line_count))
-
-    batches = PipelineRuntime._interval_summary_source_batches(source_text)
-
+    records = [{"message_ids": [index], "summary": f"summary {index}"} for index in range(line_count)]
+    batches = PipelineRuntime._interval_summary_source_batches(records)
     assert len(batches) == 2
-    assert batches[0].count("\n") + 1 == pipeline_module.INTERVAL_SUMMARY_INPUT_BATCH_SIZE
-    assert batches[1] == f"- mail_id={line_count - 1}; summary {line_count - 1}"
+    assert len(batches[0]) == pipeline_module.INTERVAL_SUMMARY_INPUT_BATCH_SIZE
+    assert batches[1] == [records[-1]]
 
 
 
@@ -657,7 +655,7 @@ def test_pipeline_passes_user_context_to_interval_summary(monkeypatch):
 
         def summarize_interval(self, _preset, **kwargs):
             self.user_contexts.append(kwargs["user_context"])
-            return {"entries": [{"summary": "Milan-related report activity.", "message_ids": [101]}]}
+            return {"entries": [{"summary": "Milan-related report activity.", "message_ids": [1]}]}
 
     class Repository:
         def get_user_profile(self):
@@ -707,9 +705,9 @@ def test_interval_summary_stores_batch_entries_when_merge_pass_fails(monkeypatch
         def summarize_interval(self, _preset, **_kwargs):
             self.calls += 1
             if self.calls == 1:
-                return {"entries": [{"summary": "First batch topic.", "message_ids": [101]}]}
+                return {"entries": [{"summary": "First batch topic.", "message_ids": [1]}]}
             if self.calls == 2:
-                return {"entries": [{"summary": "Second batch topic.", "message_ids": [102]}]}
+                return {"entries": [{"summary": "Second batch topic.", "message_ids": [1]}]}
             raise LLMContentValidationError("merge response was unusable")
 
     class Repository:
@@ -778,11 +776,11 @@ def test_interval_summary_merge_expands_synthetic_ids(monkeypatch):
 
         def summarize_interval(self, _preset, **kwargs):
             self.calls += 1
-            self.source_texts.append(kwargs["source_text"])
+            self.source_texts.append(kwargs["source_records"])
             if self.calls == 1:
-                return {"entries": [{"summary": "Google account alerts.", "message_ids": [101, 102]}]}
+                return {"entries": [{"summary": "Google account alerts.", "message_ids": [1, 2]}]}
             if self.calls == 2:
-                return {"entries": [{"summary": "Microsoft account alerts.", "message_ids": [201]}]}
+                return {"entries": [{"summary": "Microsoft account alerts.", "message_ids": [1]}]}
             return {"entries": [{"summary": "Account security alerts.", "message_ids": [1, 2]}]}
 
     class Repository:
@@ -813,7 +811,7 @@ def test_interval_summary_merge_expands_synthetic_ids(monkeypatch):
     }
     llm = LLM()
     runtime = PipelineRuntime(AppSettings(), password_encryptor=None, llm_service=llm)
-    monkeypatch.setattr(pipeline_module, "INTERVAL_SUMMARY_INPUT_BATCH_SIZE", 1)
+    monkeypatch.setattr(pipeline_module, "INTERVAL_SUMMARY_INPUT_BATCH_SIZE", 2)
 
     repository = Repository()
     run_interval_continuations(runtime,
@@ -826,11 +824,11 @@ def test_interval_summary_merge_expands_synthetic_ids(monkeypatch):
             "mailbox_name": "Inbox",
         },
         {},
-        "- mail_id=101; google source\n- mail_id=201; microsoft source",
+        "- mail_id=101; google source\n- mail_id=102; another google source\n- mail_id=201; microsoft source",
     )
 
-    assert "mail_id=1; Google account alerts." in llm.source_texts[2]
-    assert "mail_id=2; Microsoft account alerts." in llm.source_texts[2]
+    assert llm.source_texts[2][0] == {"id": 1, "summary": "Google account alerts."}
+    assert llm.source_texts[2][1] == {"id": 2, "summary": "Microsoft account alerts."}
     assert "101" not in llm.source_texts[2]
     assert repository.fresh == (
         5,
