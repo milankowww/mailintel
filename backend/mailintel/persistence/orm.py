@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -444,6 +446,23 @@ smart_search_job_messages = Table(
     PrimaryKeyConstraint("job_id", "message_id"),
 )
 
+sync_counter = Table(
+    "sync_counter",
+    metadata,
+    Column("id", SmallInteger, primary_key=True, autoincrement=False),
+    Column("generation", BigInteger, nullable=False, server_default=text("0")),
+    CheckConstraint("id = 1"),
+)
+
+# Generation tracks the latest state, without retaining a change history.
+for sync_table in (
+    messages, message_summaries, mailbox_interval_summaries, mailboxes,
+    interest_profiles, topic_clusters, message_body_cache, smart_search_jobs,
+):
+    sync_table.append_column(Column("sync_generation", BigInteger, nullable=False, server_default=text("0")))
+    Index(f"idx_{sync_table.name}_sync_generation", sync_table.c.sync_generation)
+
+
 Index("idx_messages_mailbox", messages.c.mailbox_id)
 Index("idx_messages_received", messages.c.received_at.desc())
 Index("idx_interest_matches_profile", message_interest_matches.c.interest_profile_id, message_interest_matches.c.primary_match.desc(), message_interest_matches.c.score.desc())
@@ -574,6 +593,8 @@ def baseline_statements() -> list[str]:
         for table in metadata.sorted_tables
     )
     statements.extend(QUEUE_DDL)
+    # Apply the same additive upgrade on existing installations and fresh databases.
+    statements.append((Path(__file__).parent / "migrations/versions/0002_sync_generations.sql").read_text())
     statements.extend(
         str(CreateIndex(index, if_not_exists=True).compile(dialect=dialect))
         for table in metadata.sorted_tables

@@ -752,6 +752,8 @@ def test_initial_migration_matches_initializer_and_preserves_data_on_repeat():
     connection.execute(f'SET search_path TO {migration_schema}, public')
     sql = (Path(__file__).parents[2] / 'backend/mailintel/persistence/migrations/versions/0001_initial_schema.sql').read_text()
     connection.execute(sql)
+    migration = Path(__file__).parents[2] / 'backend/mailintel/persistence/migrations/versions/0002_sync_generations.sql'
+    connection.execute(migration.read_text())
     assert describe(migration_schema) == expected
     connection.execute("UPDATE llm_presets SET notes='preserve customized settings'")
     connection.commit()

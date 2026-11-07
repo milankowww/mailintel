@@ -29,7 +29,7 @@ python -m pytest
 
 The initial revision is `0001_initial_schema`. Its SQL is frozen in `backend/mailintel/persistence/migrations/versions/0001_initial_schema.sql`. Update the current schema in `persistence/orm.py` and add a new Alembic revision for subsequent schema changes; preserve published revisions unchanged. Validate fresh initialization, upgrade behavior, and repeated initialization against PostgreSQL, including indexes and constraints.
 
-From `backend/`, with `MAILINTEL_DATABASE_URL` set, run `alembic -c alembic.ini upgrade head` to apply revisions to a test database. The application initializer currently creates the baseline directly; future schema changes must also provide a deliberate startup upgrade path.
+From `backend/`, with `MAILINTEL_DATABASE_URL` set, run `alembic -c alembic.ini upgrade head` to apply revisions to a test database. The application initializer creates the current tables and applies the additive `0002_sync_generations.sql` upgrade to existing installations. Future schema changes must also provide a deliberate startup upgrade path.
 
 ## Share source safely
 

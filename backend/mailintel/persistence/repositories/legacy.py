@@ -146,9 +146,10 @@ def _search_like_patterns(tokens: list[str]) -> list[str]:
 
 
 from .work_queue import WorkQueueRepository
+from .mobile_sync import MobileSyncRepository
 
 
-class Repository(WorkQueueRepository):
+class Repository(WorkQueueRepository, MobileSyncRepository):
     def __init__(self, connection):
         self.connection = connection
 
@@ -2067,6 +2068,7 @@ class Repository(WorkQueueRepository):
         return cluster_id
 
     def _lock_incremental_topic_clusters(self, cluster_ids: set[int]) -> None:
+        self._execute("SELECT generation FROM sync_counter WHERE id = 1 FOR UPDATE")
         for cluster_id in sorted(cluster_ids):
             self._execute("SELECT id FROM topic_clusters WHERE id = %s FOR UPDATE", (cluster_id,))
 
@@ -3081,6 +3083,7 @@ class Repository(WorkQueueRepository):
         return row is not None
 
     def snapshot_smart_search_corpus(self, job_id: int, *, embedding_model: str) -> dict[str, Any]:
+        self._execute("SELECT generation FROM sync_counter WHERE id = 1 FOR UPDATE")
         self._execute("DELETE FROM smart_search_job_messages WHERE job_id = %s", (job_id,))
         inserted = self._execute(
             """
@@ -3271,6 +3274,7 @@ class Repository(WorkQueueRepository):
             LEFT JOIN message_body_cache bc ON bc.message_id=m.id ORDER BY c.rank""", params))
 
     def merge_smart_search_matches(self, job_id: int, sources: list[dict[str, Any]]) -> None:
+        self._execute("SELECT generation FROM sync_counter WHERE id = 1 FOR UPDATE")
         row = self._execute("SELECT matching_sources_json, rejected_message_ids_json FROM smart_search_jobs WHERE job_id=%s FOR UPDATE",
                             (job_id,)).fetchone()
         if not row:
@@ -3290,6 +3294,7 @@ class Repository(WorkQueueRepository):
                       (_json(ordered), job_id))
 
     def reject_smart_search_matches(self, job_id: int, message_ids: list[int]) -> None:
+        self._execute("SELECT generation FROM sync_counter WHERE id = 1 FOR UPDATE")
         row = self._execute("SELECT rejected_message_ids_json FROM smart_search_jobs WHERE job_id=%s FOR UPDATE",
                             (job_id,)).fetchone()
         if not row:

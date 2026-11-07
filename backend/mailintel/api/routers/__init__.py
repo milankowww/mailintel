@@ -6,7 +6,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from ..dependencies import AppContext
-from . import google_oauth, accounts, dashboard, interests, llm, maintenance, processing, profile, smart_search, static
+from . import google_oauth, accounts, dashboard, interests, llm, maintenance, processing, profile, smart_search, static, mobile_sync
 
 
 def register_routes(app: FastAPI, ctx: AppContext) -> None:
@@ -21,5 +21,6 @@ def register_routes(app: FastAPI, ctx: AppContext) -> None:
         maintenance,
         smart_search,
         dashboard,
+        mobile_sync,
     ):
         module.register_routes(app, ctx)

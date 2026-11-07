@@ -23,6 +23,8 @@ class WorkQueueRepository:
             self._transaction_depth -= 1
 
     def _queue_lock(self):
+        # Publishing queue results may update synchronized rows: take their lock first.
+        self._execute("SELECT generation FROM sync_counter WHERE id = 1 FOR UPDATE")
         self._execute('SELECT pg_advisory_xact_lock(748214, 7)')
 
     def _queue_event(self, action, job=None, *, worker_id=None, preset_id=None, source_id=None, reason=''):

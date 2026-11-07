@@ -42,4 +42,6 @@ The backend accesses configured mail and model servers. Operators can choose clo
 | `frontend/src/` | Browser application |
 | `tests/backend/`, `frontend/tests/` | Automated checks |
 
-The schema initializer in `persistence/orm.py` creates the current schema. Alembic's initial SQL is frozen independently to keep the revision stable as the models evolve. See [Contributing](../CONTRIBUTING.md) before changing either.
+The schema initializer in `persistence/orm.py` creates the current schema and applies the additive synchronization-generation upgrade on existing installations. Alembic revisions retain frozen SQL independently of the current models. See [Contributing](../CONTRIBUTING.md) before changing either.
+
+Offline clients download selected reading tables through the [sync API](api.md#offline-synchronization). Indexed `sync_generation` columns record each row's latest change. Database triggers allocate generations from one transactional counter, including changes made by background workers and relationship replacements. Writers acquire the counter before synchronized row locks; model and network calls run outside these write transactions. Each download uses one database snapshot and a shared cursor across tables. Clients save rows and cursor atomically, and periodically reconcile the server's current ID lists to remove deleted records. No per-client registry or change-history table is maintained.

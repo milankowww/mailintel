@@ -9,6 +9,7 @@ from mailintel.persistence.orm import SPECIAL_DDL, baseline_statements, metadata
 def test_orm_baseline_covers_current_schema_tables() -> None:
     expected_tables = {
         "mail_accounts",
+        "sync_counter",
         "mailboxes",
         "user_profile",
         "llm_presets",
